@@ -1,10 +1,16 @@
-import { Entity, PrimaryGeneratedColumn, Column, ManyToOne } from "typeorm";
-import { Role } from "./database.role.entity";
+import {
+  Entity,
+  PrimaryGeneratedColumn,
+  Column,
+  ManyToOne,
+  JoinColumn,
+} from "typeorm";
+import { Roles } from "./database.role.entity";
 
-@Entity()
-export class User {
+@Entity({ name: "users" })
+export class Users {
   @PrimaryGeneratedColumn()
-  id: number;
+  user_id: number;
 
   @Column({ unique: true })
   email: string;
@@ -12,8 +18,18 @@ export class User {
   @Column()
   name: string;
 
-  @ManyToOne(() => Role)
-  role: Role;
+  @Column()
+  password: string;
+
+  @Column()
+  access_token: string;
+
+  @Column()
+  refresh_token: string;
+
+  @ManyToOne(() => Roles)
+  @JoinColumn({ name: "role_id" })
+  role_id: Roles;
 
   @Column({ default: false })
   blocked: boolean;

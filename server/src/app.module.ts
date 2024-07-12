@@ -1,10 +1,10 @@
 import { Module } from "@nestjs/common";
-import { AppController } from "./app.controller";
-import { AppService } from "./app.service";
 import { ConfigModule } from "@nestjs/config";
 import { TypeOrmModule } from "@nestjs/typeorm";
-import { Role } from "./database/database.role.entity";
-import { User } from "./database/database.user.entity";
+import { Roles } from "./database/database.role.entity";
+import { Users } from "./database/database.user.entity";
+import { UserController } from "./user/user.controller";
+import { UserService } from "./user/user.service";
 
 @Module({
   imports: [
@@ -16,12 +16,13 @@ import { User } from "./database/database.user.entity";
       username: process.env.POSTGRES_USER,
       password: process.env.POSTGRES_PASSWORD,
       database: process.env.POSTGRES_DB,
-      entities: [User, Role],
-      synchronize: true,
+      entities: [Users, Roles],
+      synchronize: false,
+      logging: true,
     }),
-    TypeOrmModule.forFeature([User, Role]),
+    TypeOrmModule.forFeature([Users, Roles]),
   ],
-  controllers: [AppController],
-  providers: [AppService],
+  controllers: [UserController],
+  providers: [UserService],
 })
 export class AppModule {}
