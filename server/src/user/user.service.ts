@@ -1,18 +1,18 @@
-import { Injectable } from "@nestjs/common";
-import * as bcrypt from "bcryptjs";
-import * as jwt from "jsonwebtoken";
-import { UserDto } from "./dto";
-import { Roles } from "src/database/database.role.entity";
-import { Users } from "src/database/database.user.entity";
-import { InjectRepository } from "@nestjs/typeorm";
-import { Repository } from "typeorm";
+import { Injectable } from '@nestjs/common';
+import * as bcrypt from 'bcryptjs';
+import * as jwt from 'jsonwebtoken';
+import { UserDto } from './dto';
+import { Roles } from 'src/database/database.role.entity';
+import { Users } from 'src/database/database.user.entity';
+import { InjectRepository } from '@nestjs/typeorm';
+import { Repository } from 'typeorm';
 @Injectable()
 export class UserService {
   constructor(
     @InjectRepository(Users)
     private readonly userRepository: Repository<Users>,
     @InjectRepository(Roles)
-    private readonly roleRepository: Repository<Roles>
+    private readonly roleRepository: Repository<Roles>,
   ) {}
 
   //   findUser = async (email: string): Promise<User> => {
@@ -37,37 +37,40 @@ export class UserService {
   //     return { access_token: mongoUser.access_token };
   //   };
 
-  createUser = async (
-    userDto: UserDto
-  ): Promise<{ access_token: string; refresh_token: string }> => {
+  createUser = async (userDto: UserDto): Promise<Users> => {
     const { email, password, name } = userDto;
 
     const hashedPassword = await bcrypt.hash(password, 10);
 
     const access_token = jwt.sign({ email }, process.env.JWT_SECRET, {
-      expiresIn: "10m",
+      expiresIn: '10m',
     });
 
     const refresh_token = jwt.sign({ email }, process.env.JWT_SECRET, {
-      expiresIn: "24h",
+      expiresIn: '24h',
     });
 
-    const role: Roles = await this.roleRepository.findOneOrFail({
-      where: { name: "client" },
-    });
+    try {
+      const role: Roles = await this.roleRepository.findOneOrFail({
+        where: { name: 'client' },
+      });
+      const newUser = new Users();
+      newUser.email = email;
+      newUser.name = name;
+      newUser.password = hashedPassword;
+      newUser.access_token = access_token;
+      newUser.refresh_token = refresh_token;
+      newUser.role_id = role;
+      newUser.password = hashedPassword;
 
-    const newUser = new Users();
-    newUser.email = email;
-    newUser.name = name;
-    newUser.password = hashedPassword;
-    newUser.access_token = access_token;
-    newUser.refresh_token = refresh_token;
-    newUser.role_id = role;
-    newUser.password = hashedPassword;
-
-    await this.userRepository.save(newUser);
-
-    return { access_token, refresh_token };
+      const user = await this.userRepository.save(newUser);
+      delete user.password;
+      return user;
+    } catch (error) {
+      throw new Error(
+        error.code == 23505 ? 'User already exists' : 'Failed to create user',
+      );
+    }
   };
 
   //   checkToken = async (access_token): Promise<{ user: User } | null> => {
