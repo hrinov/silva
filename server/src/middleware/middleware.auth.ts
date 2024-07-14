@@ -23,15 +23,18 @@ export class AuthMiddleware implements NestMiddleware {
 
     if (!access_token || !refresh_token) {
       next();
+      return;
     }
 
     try {
       let user = await this.usersRepository.findOne({
         where: { access_token },
+        relations: ['role'],
       });
 
       if (!user || user.refresh_token !== refresh_token) {
         next();
+        return;
       }
 
       const isTokenExpired = (token: string): boolean => {

@@ -4,10 +4,10 @@ import {
   Column,
   ManyToOne,
   JoinColumn,
-} from "typeorm";
-import { Roles } from "./database.role.entity";
+} from 'typeorm';
+import { Roles } from './database.role.entity';
 
-@Entity({ name: "users" })
+@Entity({ name: 'users' })
 export class Users {
   @PrimaryGeneratedColumn()
   user_id: number;
@@ -28,8 +28,8 @@ export class Users {
   refresh_token: string;
 
   @ManyToOne(() => Roles)
-  @JoinColumn({ name: "role_id" })
-  role_id: Roles;
+  @JoinColumn({ name: 'role' })
+  role: Roles;
 
   @Column({ default: false })
   blocked: boolean;

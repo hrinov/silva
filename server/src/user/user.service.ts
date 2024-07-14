@@ -1,7 +1,7 @@
 import { Injectable } from '@nestjs/common';
 import * as bcrypt from 'bcryptjs';
 import * as jwt from 'jsonwebtoken';
-import { LoginDto, SignUpDto } from './dto';
+import { BlockDto, LoginDto, SignUpDto } from './dto';
 import { Roles } from 'src/database/database.role.entity';
 import { Users } from 'src/database/database.user.entity';
 import { InjectRepository } from '@nestjs/typeorm';
@@ -56,11 +56,11 @@ export class UserService {
       });
 
       const user = await this.userRepository.save({
+        role,
         name,
         email,
         access_token,
         refresh_token,
-        role_id: role,
         password: hashedPassword,
       });
       delete user.password;
@@ -80,5 +80,25 @@ export class UserService {
       expiresIn: '24h',
     });
     return { access_token, refresh_token };
+  };
+
+  blockUser = async (payload: BlockDto): Promise<Users> => {
+    const { blocked, user_id } = payload;
+    try {
+      const user = await this.userRepository.findOneOrFail({
+        where: { user_id },
+      });
+      if (!user) throw new Error('User not found');
+
+      user.blocked = blocked;
+      const updatedUser = await this.userRepository.save(user);
+
+      return updatedUser;
+    } catch (error) {
+      const message = error.message;
+      throw new Error(
+        message == 'User not found' ? message : 'Something went wrong',
+      );
+    }
   };
 }
