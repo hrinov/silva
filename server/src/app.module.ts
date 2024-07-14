@@ -34,9 +34,6 @@ import * as cookieParser from 'cookie-parser';
 })
 export class AppModule implements NestModule {
   configure(consumer: MiddlewareConsumer) {
-    consumer
-      .apply(cookieParser(), AuthMiddleware)
-      .exclude({ path: '/auth(.*)', method: RequestMethod.ALL })
-      .forRoutes('*');
+    consumer.apply(cookieParser(), AuthMiddleware).forRoutes('*');
   }
 }

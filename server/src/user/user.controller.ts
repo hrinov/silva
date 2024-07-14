@@ -3,14 +3,14 @@ import {
   Body,
   Controller,
   Get,
-  Headers,
+  InternalServerErrorException,
   Post,
   Req,
   Res,
   UseGuards,
 } from '@nestjs/common';
 import { UserService } from './user.service';
-import { UserDto } from './dto';
+import { SignUpDto, LoginDto } from './dto';
 import { Response } from 'express';
 import { Users } from 'src/database/database.user.entity';
 import { AuthGuard } from 'src/guard/guard.auth';
@@ -19,44 +19,51 @@ import { AuthGuard } from 'src/guard/guard.auth';
 export class UserController {
   constructor(private readonly appService: UserService) {}
 
-  //   @Post("auth/login")
-  //   async login(@Body() userDto: UserDto): Promise<{ access_token: string }> {
-  //     const { email, password, name } = userDto;
-  //     if (!email || !password || !name)
-  //       throw new BadRequestException("Invalid email or password");
+  @Post('auth/login')
+  async loginUser(
+    @Body() userDto: LoginDto,
+    @Res({ passthrough: true }) response: Response,
+  ): Promise<Users> {
+    try {
+      const user = await this.appService.loginUser(userDto);
 
-  //     try {
-  //         const { access_token, refresh_token} = await this.appService.login(userDto);
-  //         console.log(access_token, refresh_token);
-  //     } catch(error) {
-  //         throw new BadRequestException(error);
-  //     }
-  //   }
+      response.cookie('access_token', user.access_token, {
+        httpOnly: true,
+      });
+      response.cookie('refresh_token', user.refresh_token, {
+        httpOnly: true,
+      });
+
+      return user;
+    } catch (error) {
+      const message = error.message;
+      if (message == 'Something went wrong') {
+        throw new InternalServerErrorException(message);
+      } else {
+        throw new BadRequestException(message);
+      }
+    }
+  }
 
   @Post('auth/signup')
   async createUser(
-    @Body() userDto: UserDto,
-    @Res({ passthrough: true }) response: Response, // Inject Response object
+    @Body() userDto: SignUpDto,
+    @Res({ passthrough: true }) response: Response,
   ): Promise<Users> {
-    // Define the return type as User
-    const { email, password } = userDto;
-
-    const isValidEmail = /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
-
-    if (!email || !password || password.length < 6 || !isValidEmail) {
-      throw new BadRequestException('Invalid email or password');
-    }
-
     try {
       const user: Users = await this.appService.createUser(userDto);
 
-      // Set cookies in the response
       response.cookie('access_token', user.access_token, { httpOnly: true });
       response.cookie('refresh_token', user.refresh_token, { httpOnly: true });
 
-      return user; // Return the typed user object
+      return user;
     } catch (error) {
-      throw new BadRequestException(error.message);
+      const message = error.message;
+      if (message == 'Something went wrong') {
+        throw new InternalServerErrorException(message);
+      } else {
+        throw new BadRequestException(message);
+      }
     }
   }
 

@@ -1,7 +1,7 @@
 import {
-  HttpException,
-  HttpStatus,
+  ForbiddenException,
   Injectable,
+  InternalServerErrorException,
   NestMiddleware,
 } from '@nestjs/common';
 import { Request, Response, NextFunction } from 'express';
@@ -65,7 +65,9 @@ export class AuthMiddleware implements NestMiddleware {
         res.cookie('access_token', newAccessToken, { httpOnly: true });
 
         if (refreshTokenExpired) {
-          next();
+          res.clearCookie('access_token');
+          res.clearCookie('refresh_token');
+          throw new ForbiddenException('Refresh token is expired');
         }
       }
 
@@ -73,10 +75,7 @@ export class AuthMiddleware implements NestMiddleware {
 
       next();
     } catch (error) {
-      throw new HttpException(
-        'Internal server error',
-        HttpStatus.INTERNAL_SERVER_ERROR,
-      );
+      throw new InternalServerErrorException('Something went wrong');
     }
   }
 }
